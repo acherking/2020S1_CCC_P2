@@ -1,0 +1,23 @@
+--openstack passwd
+YmM5ZWYxZDk4MGRjMWQ2
+
+
+--instance proxy
+HTTP_PROXY=http://wwwproxy.unimelb.edu.au:8000/
+HTTPS_PROXY=http://wwwproxy.unimelb.edu.au:8000/
+http_proxy=http://wwwproxy.unimelb.edu.au:8000/
+https_proxy=http://wwwproxy.unimelb.edu.au:8000/ no_proxy=localhost,127.0.0.1,localaddress,172.16.0.0/12,.melbourne.rc.nectar.org.au,.storage.unimelb.edu.au,.cloud.unimelb.edu.au
+
+
+--config proxy for docker--
+sudo mkdir /etc/systemd/system/docker.service.d
+sudo nano /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://wwwproxy.unimelb.edu.au:8000/"
+Environment="NO_PROXY=localhost,127.0.0.1,localaddress,172.16.0.0/12,.melbourne.rc.nectar.org.au,.storage.u nimelb.edu.au,.cloud.unimelb.edu.au"
+
+sudo systemctl daemon-reload
+sudo systemctl show --property Environment docker
+
+sudo systemctl restart docker
+sudo docker pull wordpress
