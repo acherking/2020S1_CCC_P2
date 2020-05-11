@@ -1,6 +1,7 @@
 import tweepy
 from tweepy import StreamListener, Stream
 
+
 consumer_key = 'STg9AiiHgEodfdb42z8dUZZ8P'
 consumer_secret = 'w2yd3WdmUp0KkBDUTnN45lYhXeTdT90Zf7K5ecv0L5wGgpEVrq'
 
