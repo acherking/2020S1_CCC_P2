@@ -1,7 +1,12 @@
+import ssl
 import json
 import tweepy
 import couchdb
+import certifi
+import numpy as np
+import geopy.geocoders
 from textblob import TextBlob
+from geopy.geocoders import Nominatim
 from tweepy import StreamListener, Stream
 
 server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
@@ -16,6 +21,7 @@ access_token_secret = 'LdQxM8DcdPS6QcsSmoRcUQmo8nWxs9B37VrpNFKY6pbLs'
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 
+MELBOURNE = [144.30, -38.30, 145.50, -37.30]
 AUSTRALIA = [112.35, -43.56, 154.41, -10.16]
 
 try:
@@ -27,10 +33,24 @@ except tweepy.TweepError:
 
 class listener(StreamListener):
 
+    def __init__(self):
+        default_context = ssl.create_default_context(cafile=certifi.where())
+        geopy.geocoders.options.default_ssl_context = default_context
+
+    def convert_to_sub(self, coordinate):
+        coordinate_np = (np.sum([coordinate[0], coordinate[1], coordinate[2], coordinate[3]], axis=0)) / 4
+        coordinate_list = coordinate_np.tolist()
+        coordinates = str(coordinate_list[1]) + ", " + str(coordinate_list[0])
+        nominatim = Nominatim(user_agent="ccc_geo")
+        locations = nominatim.reverse(coordinates)
+        locations = str(locations).split(", ")
+        return locations[1]
+
     def on_data(self, data):
         try:
             data_json = json.loads(data)
-            if ("retweeted_status" not in data_json.keys()) and ("quoted_status" not in data_json.keys()) and (data_json["lang"] == "en"):
+            if ("retweeted_status" not in data_json.keys()) and ("quoted_status" not in data_json.keys()) and (data_json["lang"] == "en")\
+                    and (data_json["in_reply_to_status_id"] is None):
                 tweet = dict()
                 place = dict()
                 hashtags = []
@@ -59,9 +79,18 @@ class listener(StreamListener):
                 else:
                     tweet["geo"] = data_json["geo"]
                 place["full_name"] = data_json["place"]["full_name"]
+                place["state"] = place["full_name"].split(", ")[1]
                 place["country"] = data_json["place"]["country"]
+                place["city"] = place["full_name"].split(", ")[0]
                 place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
+                suburb = self.convert_to_sub(place["coordinates"][0])
+                place["suburb"] = suburb
+                if suburb == "Cheltenham" or suburb == "Dabee":
+                    place["suburb_is_ignore"] = True
+                else:
+                    place["suburb_is_ignore"] = False
                 tweet["place"] = place
+                print(tweet)
                 db.update([tweet])
             return True
         except BaseException as e:
@@ -77,6 +106,5 @@ class listener(StreamListener):
             print(status_code)
             return False
 
-
 twitterStream = Stream(auth=auth, listener=listener())
-twitterStream.filter(locations=AUSTRALIA)
+twitterStream.filter(locations=MELBOURNE)
