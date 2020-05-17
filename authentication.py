@@ -29,7 +29,7 @@ class listener(StreamListener):
     def on_data(self, data):
         try:
             data_json = json.loads(data)
-            if ("retweeted_status" not in data_json.keys()) and ("quoted_status" not in data_json.keys()) and data_json["lang"] == "en":
+            if ("retweeted_status" not in data_json.keys()) and ("quoted_status" not in data_json.keys()) and (data_json["lang"] == "en"):
                 tweet = dict()
                 place = dict()
                 hashtags = []
