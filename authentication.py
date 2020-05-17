@@ -50,7 +50,8 @@ class listener(StreamListener):
                     tweet["hashtags"] = hashtags
                 if data_json["geo"] is not None:
                     tweet["geo"] = data_json["geo"]["coordinates"]
-                tweet["geo"] = data_json["geo"]
+                else:
+                    tweet["geo"] = data_json["geo"]
                 place["full_name"] = data_json["place"]["full_name"]
                 place["country"] = data_json["place"]["country"]
                 place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
