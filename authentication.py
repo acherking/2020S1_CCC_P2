@@ -1,7 +1,8 @@
-import tweepy
-from tweepy import StreamListener, Stream
-import couchdb
 import json
+import tweepy
+import couchdb
+from textblob import TextBlob
+from tweepy import StreamListener, Stream
 
 server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 db = server.create('test-twitter-5_17-test')
@@ -48,6 +49,11 @@ class listener(StreamListener):
                         for i in data_json["extended_tweet"]["entities"]["hashtags"]:
                             hashtags.append(i["text"])
                     tweet["hashtags"] = hashtags
+                blob = TextBlob(tweet["text"])
+                if blob.sentiment[0] >= 0:
+                    tweet["sentiment"] = "positive"
+                else:
+                    tweet["sentiment"] = "negative"
                 if data_json["geo"] is not None:
                     tweet["geo"] = data_json["geo"]["coordinates"]
                 else:
