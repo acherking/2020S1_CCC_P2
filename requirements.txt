@@ -1,5 +1,0 @@
-CouchDB==1.2
-geopy==1.22.0
-numpy==1.16.5
-textblob==0.15.3
-tweepy==3.8.0
