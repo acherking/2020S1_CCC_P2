@@ -87,8 +87,12 @@ class listener(StreamListener):
                     place["city"] = None
                 elif state not in AUSTRALIA_CITY.keys():
                     true_state = self.get_keys(AUSTRALIA_CITY,state)
-                    place["state"] = true_state
-                    place["city"] = state
+                    if true_state:
+                        place["state"] = true_state
+                        place["city"] = state
+                    else:
+                        place["state"] = None
+                        place["city"] = state
                 else:
                     place["state"] = state
                     place["city"] = city
