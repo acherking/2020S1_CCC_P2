@@ -5,7 +5,7 @@ from textblob import TextBlob
 from tweepy import StreamListener, Stream
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('australia_5_18')
+db = server.create('australia_5_19_2')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 #db = server.create('test-australia_5_18')
@@ -42,7 +42,7 @@ class listener(StreamListener):
                 return k
 
     def save_to_json(self, tweet):
-        with open('australia_5_18.json', 'a') as json_file:
+        with open('australia_5_19_2.json', 'a') as json_file:
             json_str = json.dumps(tweet)
             json_file.write(json_str + "\n")
 
@@ -80,22 +80,42 @@ class listener(StreamListener):
                     tweet["geo"] = data_json["geo"]
                 place["country"] = data_json["place"]["country"]
                 place["full_name"] = data_json["place"]["full_name"]
-                state = place["full_name"].split(", ")[1]
-                city = place["full_name"].split(", ")[0]
-                if state == "Australia":
-                    place["state"] = city
-                    place["city"] = None
-                elif state not in AUSTRALIA_CITY.keys():
-                    true_state = self.get_keys(AUSTRALIA_CITY,state)
-                    if true_state:
-                        place["state"] = true_state
-                        place["city"] = state
-                    else:
+                name_split = place["full_name"].split(", ")
+                if len(name_split) == 1:
+                    if name_split[0] == "Australia":
                         place["state"] = None
-                        place["city"] = state
+                        place["city"] = None
+                    elif name_split[0] in AUSTRALIA_CITY.keys():
+                        place["state"] = name_split[0]
+                        place["city"] = None
+                    elif name_split[0] not in AUSTRALIA_CITY.keys():
+                        true_name = self.get_keys(AUSTRALIA_CITY, name_split[0])
+                        if true_name:
+                            place["state"] = true_name
+                            place["city"] = name_split[0]
+                        else:
+                            place["state"] = None
+                            place["city"] = name_split[0]
+                elif len(name_split) == 2:
+                    state = place["full_name"].split(", ")[1]
+                    city = place["full_name"].split(", ")[0]
+                    if state == "Australia":
+                        place["state"] = city
+                        place["city"] = None
+                    elif state not in AUSTRALIA_CITY.keys():
+                        true_state = self.get_keys(AUSTRALIA_CITY,state)
+                        if true_state:
+                            place["state"] = true_state
+                            place["city"] = state
+                        else:
+                            place["state"] = None
+                            place["city"] = state
+                    else:
+                        place["state"] = state
+                        place["city"] = city
                 else:
-                    place["state"] = state
-                    place["city"] = city
+                    place["state"] = None
+                    place["city"] = None
                 place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
                 tweet["place"] = place
                 print(tweet)
