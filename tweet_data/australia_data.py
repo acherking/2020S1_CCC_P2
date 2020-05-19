@@ -101,8 +101,6 @@ class listener(StreamListener):
                 print(tweet)
                 self.save_to_json(tweet)
                 db.update([tweet])
-                self.save_to_json(tweet)
-                db.update([tweet])
                 self.counter += 1
                 if self.counter < self.limit:
                     return True
