@@ -11,7 +11,7 @@ from geopy.geocoders import Nominatim
 from tweepy import StreamListener, Stream
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('melbourne_5_18')
+db = server.create('melbourne_5_19_2')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 #db = server.create('test-melbourne_5_18')
@@ -61,7 +61,7 @@ class listener(StreamListener):
         return location
 
     def save_to_json(self, tweet):
-        with open('melbourne_5_18.json', 'a') as json_file:
+        with open('melbourne_5_19_2.json', 'a') as json_file:
             json_str = json.dumps(tweet)
             json_file.write(json_str + "\n")
 
@@ -99,14 +99,38 @@ class listener(StreamListener):
                     tweet["geo"] = data_json["geo"]
                 place["country"] = data_json["place"]["country"]
                 place["full_name"] = data_json["place"]["full_name"]
-                state = place["full_name"].split(", ")[1]
-                city = place["full_name"].split(", ")[0]
-                if state == "Australia":
-                    place["state"] = city
-                    place["city"] = None
+                name_split = place["full_name"].split(", ")
+                if len(name_split) == 1:
+                    if name_split[0] == "Australia":
+                        place["state"] = None
+                        place["city"] = None
+                    elif name_split[0] == "Victoria":
+                        place["state"] = name_split[0]
+                        place["city"] = None
+                    elif name_split[0] == "Melbourne":
+                        place["state"] = None
+                        place["city"] = name_split[0]
+                    else:
+                        place["state"] = None
+                        place["city"] = None
+                elif len(name_split) == 2:
+                    state = place["full_name"].split(", ")[1]
+                    city = place["full_name"].split(", ")[0]
+                    if state == "Australia":
+                        place["state"] = city
+                        place["city"] = None
+                    elif state == "Victoria":
+                        place["state"] = state
+                        place["city"] = city
+                    elif state == "Melbourne":
+                        place["state"] = None
+                        place["city"] = state
+                    else:
+                        place["state"] = None
+                        place["city"] = None
                 else:
-                    place["state"] = state
-                    place["city"] = city
+                    place["state"] = None
+                    place["city"] = None
                 place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
                 suburb = self.convert_to_sub(place["coordinates"][0])
                 place["suburb"] = suburb
@@ -151,5 +175,3 @@ for tweet in public_tweets:
 
 #melbourne areas   
 """
-
-
