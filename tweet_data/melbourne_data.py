@@ -2,16 +2,19 @@ import ssl
 import json
 import time
 import tweepy
+import threading
 import couchdb
 import certifi
 import numpy as np
 import geopy.geocoders
+from datetime import datetime
 from textblob import TextBlob
 from geopy.geocoders import Nominatim
 from tweepy import StreamListener, Stream
+from urllib3.exceptions import ProtocolError
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('melbourne_5_19_2')
+db = server.create('melbourne_5_20_1')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 #db = server.create('test-melbourne_5_18')
@@ -35,6 +38,112 @@ try:
 except tweepy.TweepError:
     print('Error! Failed to get request token.')
 
+def save_to_json(tweet):
+    with open('data_5_20/melbourne_5_20_1.json', 'a') as json_file:
+        json_str = json.dumps(tweet)
+        json_file.write(json_str + "\n")
+
+def save_to_db(tweet):
+    db.update([tweet])
+
+def convert_to_sub(coordinate):
+    coordinate_np = (np.sum([coordinate[0], coordinate[1], coordinate[2], coordinate[3]], axis=0)) / 4
+    coordinate_list = coordinate_np.tolist()
+    coordinates = str(coordinate_list[1]) + ", " + str(coordinate_list[0])
+    nominatim = Nominatim(user_agent="ccc_geo")
+    locations = nominatim.reverse(coordinates)
+    locations = str(locations).split(", ")
+    for i in locations:
+        if i in MELBOURNE_SUBURB:
+            location = i
+            break
+        else:
+            location = locations[1]
+    return location
+
+def process_tweet_data(data_json):
+    try:
+        print('----------------START PROCESS TWEET DATA------------:' + str(datetime.now()) + ' id: ' + data_json['id_str'])
+        tweet = dict()
+        place = dict()
+        hashtags = []
+        tweet["created_at"] = data_json["created_at"]
+        tweet["id"] = data_json["id_str"]
+        tweet["user_screen_name"] = data_json["user"]["screen_name"]
+        if "extended_tweet" not in data_json.keys():
+            tweet["text"] = data_json["text"]
+            if data_json["entities"]["hashtags"] is not None:
+                for i in data_json["entities"]["hashtags"]:
+                    hashtags.append(i["text"])
+            tweet["hashtags"] = hashtags
+        else:
+            tweet["text"] = data_json["extended_tweet"]["full_text"]
+            if data_json["extended_tweet"]["entities"]["hashtags"] is not None:
+                for i in data_json["extended_tweet"]["entities"]["hashtags"]:
+                    hashtags.append(i["text"])
+            tweet["hashtags"] = hashtags
+        blob = TextBlob(tweet["text"])
+        if blob.sentiment[0] >= 0:
+            tweet["sentiment"] = "positive"
+        else:
+            tweet["sentiment"] = "negative"
+        if data_json["geo"] is not None:
+            tweet["geo"] = data_json["geo"]["coordinates"]
+        else:
+            tweet["geo"] = data_json["geo"]
+        place["country"] = data_json["place"]["country"]
+        place["full_name"] = data_json["place"]["full_name"]
+
+        name_split = place["full_name"].split(", ")
+        if len(name_split) == 1:
+            if name_split[0] == "Australia":
+                place["state"] = None
+                place["city"] = None
+            elif name_split[0] == "Victoria":
+                place["state"] = name_split[0]
+                place["city"] = None
+            elif name_split[0] == "Melbourne":
+                place["state"] = None
+                place["city"] = name_split[0]
+            else:
+                place["state"] = None
+                place["city"] = None
+        elif len(name_split) == 2:
+            state = place["full_name"].split(", ")[1]
+            city = place["full_name"].split(", ")[0]
+            if state == "Australia":
+                place["state"] = city
+                place["city"] = None
+            elif state == "Victoria":
+                place["state"] = state
+                place["city"] = city
+            elif state == "Melbourne":
+                place["state"] = None
+                place["city"] = state
+            else:
+                place["state"] = None
+                place["city"] = None
+        else:
+            place["state"] = None
+            place["city"] = None
+
+        place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
+        suburb = convert_to_sub(place["coordinates"][0])
+        place["suburb"] = suburb
+        if ((abs(place["coordinates"][0][0][0]-place["coordinates"][0][2][0]))>0.5) or ((abs(place["coordinates"][0][0][1]-place["coordinates"][0][1][1]))>0.5):
+            place["suburb_is_ignore"] = True
+        elif suburb not in MELBOURNE_SUBURB:
+            place["suburb_is_ignore"] = True
+        else:
+            place["suburb_is_ignore"] = False
+        tweet["place"] = place
+        print(tweet)
+        save_to_json(tweet)
+        save_to_db(tweet)
+        print('----------------END PROCESS TWEET DATA------------:' + str(datetime.now()) + ' id: ' + data_json['id_str'])
+    except BaseException as e:
+        print('----------------GET EXCEPTION------------:' + str(datetime.now()) + ' id: ' + data_json['id_str'])
+        print(e)
 
 class listener(StreamListener):
 
@@ -42,136 +151,41 @@ class listener(StreamListener):
         super().__init__()
         default_context = ssl.create_default_context(cafile=certifi.where())
         geopy.geocoders.options.default_ssl_context = default_context
-        self.counter = 0
         self.limit = 20000
 
-    def convert_to_sub(self, coordinate):
-        coordinate_np = (np.sum([coordinate[0], coordinate[1], coordinate[2], coordinate[3]], axis=0)) / 4
-        coordinate_list = coordinate_np.tolist()
-        coordinates = str(coordinate_list[1]) + ", " + str(coordinate_list[0])
-        nominatim = Nominatim(user_agent="ccc_geo")
-        locations = nominatim.reverse(coordinates)
-        locations = str(locations).split(", ")
-        for i in locations:
-            if i in MELBOURNE_SUBURB:
-                location = i
-                break
-            else:
-                location = locations[1]
-        return location
-
-    def save_to_json(self, tweet):
-        with open('melbourne_5_19_2.json', 'a') as json_file:
-            json_str = json.dumps(tweet)
-            json_file.write(json_str + "\n")
 
     def on_data(self, data):
-        try:
-            data_json = json.loads(data)
-            if ("retweeted_status" not in data_json.keys()) and ("quoted_status" not in data_json.keys()) and (data_json["lang"] == "en")\
-                    and (data_json["in_reply_to_status_id"] is None) and (data_json["place"]["country"] == "Australia"):
-                tweet = dict()
-                place = dict()
-                hashtags = []
-                tweet["created_at"] = data_json["created_at"]
-                tweet["id"] = data_json["id_str"]
-                tweet["user_screen_name"] = data_json["user"]["screen_name"]
-                if "extended_tweet" not in data_json.keys():
-                    tweet["text"] = data_json["text"]
-                    if data_json["entities"]["hashtags"] is not None:
-                        for i in data_json["entities"]["hashtags"]:
-                            hashtags.append(i["text"])
-                    tweet["hashtags"] = hashtags
-                else:
-                    tweet["text"] = data_json["extended_tweet"]["full_text"]
-                    if data_json["extended_tweet"]["entities"]["hashtags"] is not None:
-                        for i in data_json["extended_tweet"]["entities"]["hashtags"]:
-                            hashtags.append(i["text"])
-                    tweet["hashtags"] = hashtags
-                blob = TextBlob(tweet["text"])
-                if blob.sentiment[0] >= 0:
-                    tweet["sentiment"] = "positive"
-                else:
-                    tweet["sentiment"] = "negative"
-                if data_json["geo"] is not None:
-                    tweet["geo"] = data_json["geo"]["coordinates"]
-                else:
-                    tweet["geo"] = data_json["geo"]
-                place["country"] = data_json["place"]["country"]
-                place["full_name"] = data_json["place"]["full_name"]
-                name_split = place["full_name"].split(", ")
-                if len(name_split) == 1:
-                    if name_split[0] == "Australia":
-                        place["state"] = None
-                        place["city"] = None
-                    elif name_split[0] == "Victoria":
-                        place["state"] = name_split[0]
-                        place["city"] = None
-                    elif name_split[0] == "Melbourne":
-                        place["state"] = None
-                        place["city"] = name_split[0]
-                    else:
-                        place["state"] = None
-                        place["city"] = None
-                elif len(name_split) == 2:
-                    state = place["full_name"].split(", ")[1]
-                    city = place["full_name"].split(", ")[0]
-                    if state == "Australia":
-                        place["state"] = city
-                        place["city"] = None
-                    elif state == "Victoria":
-                        place["state"] = state
-                        place["city"] = city
-                    elif state == "Melbourne":
-                        place["state"] = None
-                        place["city"] = state
-                    else:
-                        place["state"] = None
-                        place["city"] = None
-                else:
-                    place["state"] = None
-                    place["city"] = None
-                place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
-                suburb = self.convert_to_sub(place["coordinates"][0])
-                place["suburb"] = suburb
-                if ((abs(place["coordinates"][0][0][0]-place["coordinates"][0][2][0]))>0.5) or ((abs(place["coordinates"][0][0][1]-place["coordinates"][0][1][1]))>0.5):
-                    place["suburb_is_ignore"] = True
-                elif suburb not in MELBOURNE_SUBURB:
-                    place["suburb_is_ignore"] = True
-                else:
-                    place["suburb_is_ignore"] = False
-                tweet["place"] = place
-                print(tweet)
-                self.save_to_json(tweet)
-                db.update([tweet])
-                self.counter += 1
-                if self.counter < self.limit:
-                    return True
-                else:
-                    twitterStream.disconnect()
-        except BaseException as e:
-            #print('failed on_status,', str(e))
-            #time.sleep(5)
-            print(e)
-            return True
+        data_json = json.loads(data)
+        if (data_json['place'] is not None) and ("retweeted_status" not in data_json.keys()) and ("quoted_status" not in data_json.keys()) and (data_json["lang"] == "en")\
+                and (data_json["in_reply_to_status_id"] is None) and (data_json["place"]["country"] == "Australia"):
+            try:
+                process_tweet_data_thread = threading.Thread(target=process_tweet_data, args=(data_json, ))
+                process_tweet_data_thread.start()
+            except:
+                print ("Error: unable to start thread")
 
     def on_status(self, status):
         print(status.text)
 
     def on_error(self, status_code):
-        # returning False in on_data disconnects the stream
         if status_code == 420:
-            print(status_code)
-            return False
+            print('get a 420 code from twitter')
+            print('-------------------sleep 90 seconds to reconnect------------------------')
+            twitterStream.disconnect()
+            time.sleep(90)
+            twitterStream.filter(locations=MELBOURNE, is_async=True)
+            return True
 
 twitterStream = Stream(auth=auth, listener=listener())
-twitterStream.filter(locations=MELBOURNE)
+twitterStream.disconnect()
 
-"""
-api = tweepy.API(auth)
-public_tweets = api.home_timeline()
-for tweet in public_tweets:
-    print(tweet.text)
+while True:
+    try:
+        twitterStream.filter(locations=MELBOURNE, is_async=True)
+    except (ProtocolError, AttributeError):
+        print('------------------get ProtocolError or AttrbuteError------continue the stream-------')
+        twitterStream.disconnect()
+        time.sleep(90)
+        continue
 
-#melbourne areas   
-"""
+
