@@ -14,10 +14,10 @@ from tweepy import StreamListener, Stream
 from urllib3.exceptions import ProtocolError
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('melbourne_5_20_1')
+db = server.create('melbourne_5_20_3')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
-#db = server.create('test-melbourne_5_18')
+#db = server.create('test-melbourne_5_20')
 
 consumer_key = 'Twd11SLSUOhAvpmXq94bTUTtA'
 consumer_secret = 'lVfoW9DHTnWPMp8h0CxJbMn0AzNf9J84gl5o5iQMfis6hGJG1r'
@@ -39,7 +39,7 @@ except tweepy.TweepError:
     print('Error! Failed to get request token.')
 
 def save_to_json(tweet):
-    with open('data_5_20/melbourne_5_20_1.json', 'a') as json_file:
+    with open('data_5_20/melbourne_5_20_3.json', 'a') as json_file:
         json_str = json.dumps(tweet)
         json_file.write(json_str + "\n")
 
@@ -63,80 +63,68 @@ def convert_to_sub(coordinate):
 
 def process_tweet_data(data_json):
     try:
-        print('----------------START PROCESS TWEET DATA------------:' + str(datetime.now()) + ' id: ' + data_json['id_str'])
-        tweet = dict()
         place = dict()
-        hashtags = []
-        tweet["created_at"] = data_json["created_at"]
-        tweet["id"] = data_json["id_str"]
-        tweet["user_screen_name"] = data_json["user"]["screen_name"]
-        if "extended_tweet" not in data_json.keys():
-            tweet["text"] = data_json["text"]
-            if data_json["entities"]["hashtags"] is not None:
-                for i in data_json["entities"]["hashtags"]:
-                    hashtags.append(i["text"])
-            tweet["hashtags"] = hashtags
-        else:
-            tweet["text"] = data_json["extended_tweet"]["full_text"]
-            if data_json["extended_tweet"]["entities"]["hashtags"] is not None:
-                for i in data_json["extended_tweet"]["entities"]["hashtags"]:
-                    hashtags.append(i["text"])
-            tweet["hashtags"] = hashtags
-        blob = TextBlob(tweet["text"])
-        if blob.sentiment[0] >= 0:
-            tweet["sentiment"] = "positive"
-        else:
-            tweet["sentiment"] = "negative"
-        if data_json["geo"] is not None:
-            tweet["geo"] = data_json["geo"]["coordinates"]
-        else:
-            tweet["geo"] = data_json["geo"]
-        place["country"] = data_json["place"]["country"]
         place["full_name"] = data_json["place"]["full_name"]
-
         name_split = place["full_name"].split(", ")
-        if len(name_split) == 1:
-            if name_split[0] == "Australia":
-                place["state"] = None
-                place["city"] = None
-            elif name_split[0] == "Victoria":
-                place["state"] = name_split[0]
-                place["city"] = None
-            elif name_split[0] == "Melbourne":
-                place["state"] = None
-                place["city"] = name_split[0]
-            else:
-                place["state"] = None
-                place["city"] = None
-        elif len(name_split) == 2:
+        if len(name_split) == 2:
             state = place["full_name"].split(", ")[1]
             city = place["full_name"].split(", ")[0]
-            if state == "Australia":
-                place["state"] = city
-                place["city"] = None
-            elif state == "Victoria":
-                place["state"] = state
-                place["city"] = city
+            if state == "Victoria":
+                if city == "Melbourne":
+                    print('----------------START PROCESS TWEET DATA------------:' + str(datetime.now()) + ' id: ' +
+                          data_json['id_str'])
+                    place["state"] = state
+                    place["city"] = city
+                else:
+                    return True
             elif state == "Melbourne":
+                print(
+                    '----------------START PROCESS TWEET DATA------------:' + str(datetime.now()) + ' id: ' + data_json[
+                        'id_str'])
                 place["state"] = None
                 place["city"] = state
             else:
-                place["state"] = None
-                place["city"] = None
+                return True
+            tweet = dict()
+            hashtags = []
+            tweet["created_at"] = data_json["created_at"]
+            tweet["id"] = data_json["id_str"]
+            tweet["user_screen_name"] = data_json["user"]["screen_name"]
+            if "extended_tweet" not in data_json.keys():
+                tweet["text"] = data_json["text"]
+                if data_json["entities"]["hashtags"] is not None:
+                    for i in data_json["entities"]["hashtags"]:
+                        hashtags.append(i["text"])
+                tweet["hashtags"] = hashtags
+            else:
+                tweet["text"] = data_json["extended_tweet"]["full_text"]
+                if data_json["extended_tweet"]["entities"]["hashtags"] is not None:
+                    for i in data_json["extended_tweet"]["entities"]["hashtags"]:
+                        hashtags.append(i["text"])
+                tweet["hashtags"] = hashtags
+            blob = TextBlob(tweet["text"])
+            if blob.sentiment[0] >= 0:
+                tweet["sentiment"] = "positive"
+            else:
+                tweet["sentiment"] = "negative"
+            if data_json["geo"] is not None:
+                tweet["geo"] = data_json["geo"]["coordinates"]
+            else:
+                tweet["geo"] = data_json["geo"]
+            place["country"] = data_json["place"]["country"]
+            place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
+            suburb = convert_to_sub(place["coordinates"][0])
+            place["suburb"] = suburb
+            if ((abs(place["coordinates"][0][0][0] - place["coordinates"][0][2][0])) > 0.5) or (
+                    (abs(place["coordinates"][0][0][1] - place["coordinates"][0][1][1])) > 0.5):
+                place["suburb_is_ignore"] = True
+            elif suburb not in MELBOURNE_SUBURB:
+                place["suburb_is_ignore"] = True
+            else:
+                place["suburb_is_ignore"] = False
+            tweet["place"] = place
         else:
-            place["state"] = None
-            place["city"] = None
-
-        place["coordinates"] = data_json["place"]["bounding_box"]["coordinates"]
-        suburb = convert_to_sub(place["coordinates"][0])
-        place["suburb"] = suburb
-        if ((abs(place["coordinates"][0][0][0]-place["coordinates"][0][2][0]))>0.5) or ((abs(place["coordinates"][0][0][1]-place["coordinates"][0][1][1]))>0.5):
-            place["suburb_is_ignore"] = True
-        elif suburb not in MELBOURNE_SUBURB:
-            place["suburb_is_ignore"] = True
-        else:
-            place["suburb_is_ignore"] = False
-        tweet["place"] = place
+            return True
         print(tweet)
         save_to_json(tweet)
         save_to_db(tweet)
