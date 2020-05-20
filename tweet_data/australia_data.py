@@ -9,7 +9,7 @@ from tweepy import StreamListener, Stream
 from urllib3.exceptions import ProtocolError
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('australia_5_20_1')
+db = server.create('australia_5_20_3')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 #db = server.create('test-australia_5_18')
@@ -35,12 +35,17 @@ except tweepy.TweepError:
     print('Error! Failed to get request token.')
 
 def save_to_json(tweet):
-    with open('data_5_20/australia_5_20_1.json', 'a') as json_file:
+    with open('data_5_20/australia_5_20_3.json', 'a') as json_file:
         json_str = json.dumps(tweet)
         json_file.write(json_str + "\n")
 
 def save_to_db(tweet):
     db.update([tweet])
+
+def get_keys(d, value):
+    for k, v in d.items():
+        if value in v:
+            return k
 
 def process_tweet_data(data_json):
     try:
@@ -84,7 +89,7 @@ def process_tweet_data(data_json):
                 place["state"] = name_split[0]
                 place["city"] = None
             elif name_split[0] not in AUSTRALIA_CITY.keys():
-                true_name = self.get_keys(AUSTRALIA_CITY, name_split[0])
+                true_name = get_keys(AUSTRALIA_CITY, name_split[0])
                 if true_name:
                     place["state"] = true_name
                     place["city"] = name_split[0]
@@ -98,7 +103,7 @@ def process_tweet_data(data_json):
                 place["state"] = city
                 place["city"] = None
             elif state not in AUSTRALIA_CITY.keys():
-                true_state = self.get_keys(AUSTRALIA_CITY,state)
+                true_state = get_keys(AUSTRALIA_CITY,state)
                 if true_state:
                     place["state"] = true_state
                     place["city"] = state
@@ -129,11 +134,6 @@ class listener(StreamListener):
     def __init__(self):
         super().__init__()
         self.limit = 20000
-
-    def get_keys(self, d, value):
-        for k, v in d.items():
-            if value in v:
-                return k
 
     def on_data(self, data):
         data_json = json.loads(data)
