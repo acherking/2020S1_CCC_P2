@@ -9,7 +9,7 @@ from tweepy import StreamListener, Stream
 from urllib3.exceptions import ProtocolError
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('australia_5_20_3')
+db = server.create('australia_5_22_1')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 #db = server.create('test-australia_5_18')
@@ -35,7 +35,7 @@ except tweepy.TweepError:
     print('Error! Failed to get request token.')
 
 def save_to_json(tweet):
-    with open('data_5_20/australia_5_20_3.json', 'a') as json_file:
+    with open('data_5_22/australia_5_22_1.json', 'a') as json_file:
         json_str = json.dumps(tweet)
         json_file.write(json_str + "\n")
 
@@ -166,5 +166,5 @@ while True:
     except (ProtocolError, AttributeError):
         print('------------------get ProtocolError or AttrbuteError------continue the stream-------')
         twitterStream.disconnect()
-        time.sleep(90)
-        continue
+        time.sleep(5)
+        twitterStream.filter(locations=AUSTRALIA, is_async=True)
