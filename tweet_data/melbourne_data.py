@@ -14,7 +14,13 @@ from tweepy import StreamListener, Stream
 from urllib3.exceptions import ProtocolError
 
 server = couchdb.Server('http://admin:123456@172.26.131.241:5984/')
-db = server.create('melbourne_5_22_1')
+if 'melbourne_data' in server:
+    db = server['melbourne_data']
+else:
+    db = server.create('melbourne_data')
+MDHM = time.strftime('%m%d%H%M', time.localtime(time.time()))
+FILEDIR = 'data/mel_' + MDHM + '.json'
+# db = server.create('melbourne_5_22_1')
 
 #server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
 #db = server.create('test-melbourne_5_20')
@@ -39,7 +45,7 @@ except tweepy.TweepError:
     print('Error! Failed to get request token.')
 
 def save_to_json(tweet):
-    with open('data_5_22/melbourne_5_22_1.json', 'a') as json_file:
+    with open(FILEDIR, 'a') as json_file:
         json_str = json.dumps(tweet)
         json_file.write(json_str + "\n")
 
