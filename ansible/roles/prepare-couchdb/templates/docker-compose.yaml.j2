@@ -1,0 +1,18 @@
+version: '3.6'
+
+services:
+  my-couchdb:
+    image: couchdb:latest
+    restart: always
+    ports:
+      - 5984:5984
+      - 9100:9100
+      - 4369:4369
+    environment:
+      - COUCHDB_SECRET=a192aeb9904e6590849337933b000c99
+      - 'ERL_FLAGS=-setcookie "a192aeb9904e6590849337933b000c99"'
+      - NODENAME={{ansible_host}}
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=123456
+    volumes:
+      - {{couchdb_data_dir}}:/opt/couchdb/data
