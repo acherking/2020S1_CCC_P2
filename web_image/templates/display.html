@@ -42,120 +42,11 @@
         <div id="statetweetnumber" class=statetweetnumber ></div>
 
 
-        <div id="austriliatweetcomparing" class=austriliatweetcomparing></div>
+
         <div id="topthreehashtags" class=topthreehashtags></div>
 
     </div>
-    <script type=" text/javascript">
-        // 基于准备好的dom，初始化echarts实例
-        var myChart = echarts.init(document.getElementById('austriliatweetcomparing'));
 
-        // 指定图表的配置项和数据
-        option = {
-    tooltip: {
-        trigger: 'axis',
-        axisPointer: {            // 坐标轴指示器，坐标轴触发有效
-            type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-        }
-    },
-    legend: {
-        data: ['Past Positive', 'Past Negative', 'Covid-19 Positive', 'Covid-19 Negative']
-    },
-    grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-    },
-    xAxis: {
-        type: 'value'
-    },
-    yAxis: {
-        type: 'category',
-        data: ['Australian Capital Territory',
-'New South Wales',
-'Queensland',
-'South Australia',
-'Tasmania',
-'Victoria',
-'Western Australia']
-    },
-    series: [
-        {
-            name: 'Past Positive',
-            type: 'bar',
-            stack: '总量',
-            label: {
-                show: true,
-                position: 'insideRight'
-            },
-            data: [21164,
-258427,
-238699,
-126880,
-18564,
-54228,
-186472]
-        },
-        {
-            name: 'Past Negative',
-            type: 'bar',
-            stack: '总量',
-            label: {
-                show: true,
-                position: 'insideRight'
-            },
-            data: [
-                3609,
-49147,
-44055,
-23733,
-3561,
-10351,
-34672]
-        },
-        {
-            name: 'Covid-19 Positive',
-            type: 'bar',
-            stack: '总量',
-            label: {
-                show: true,
-                position: 'insideRight'
-            },
-            data: [820,
-11085,
-5657,
-2152,
-464,
-11038,
-2710,
-1404,
-443]
-        },
-        {
-            name: 'Covid-19 Negative',
-            type: 'bar',
-            stack: '总量',
-            label: {
-                show: true,
-                position: 'insideRight'
-            },
-            data: [126,
-2095,
-1189,
-384,
-99,
-2240,
-496,
-155,
-76]
-        },
-    ]
-};
-
-        // 使用刚指定的配置项和数据显示图表。
-        myChart.setOption(option);
-    </script>
     <script type="text/javascript">
         var hashtagWordCloud = new Js2WordCloud(document.getElementById('topthreehashtags'));
         var pastAustriliaHashTag={{pastAustriliaHashTag|safe}};
@@ -329,7 +220,7 @@ statetweetnumber.on('click', function (params) {
                     }
                 },
                 series: [{
-                    name: 'BeforeCovid',
+                    name: 'Weekly Income',
                     type: 'map',
                     nameProperty: 'STATE_NAME',
                     roam: true,

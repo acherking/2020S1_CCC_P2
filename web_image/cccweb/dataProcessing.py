@@ -220,7 +220,7 @@ def getComparingAustriliaTweetNumber(past,now):
     for i in range(0,len(past['positive'])+1):
 
         if i>0:
-            data[1][i] = (int(past['positive'][i-1]['value'])+int(data[1][i]))/52
+            data[1][i] = int((int(past['positive'][i-1]['value'])+int(data[1][i]))/4)
     jumper=0
     for i in range(0, len(now['negative']) + 1):
 
