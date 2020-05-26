@@ -1,0 +1,27 @@
+---
+- name: Create a directory for docker proxy config file
+  tags: 'docker proxy'
+  become: yes
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+    mode: 0755
+
+- name: Copy docker proxy file
+  tags: 'docker proxy'
+  become: yes
+  copy:
+    src: http-proxy.conf
+    dest: /etc/systemd/system/docker.service.d
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Flush the changes and restart the Docker service
+  tags: 'docker proxy'
+  become: yes
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: docker
+  

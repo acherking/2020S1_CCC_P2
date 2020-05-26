@@ -1,0 +1,12 @@
+- hosts: system
+  vars_files:
+    - host_vars/prepare_system_var.yaml
+  gather_facts: false
+
+  roles:
+    - role: prepare-instance-proxy
+    - role: prepare-common
+    - role: prepare-volumes
+    - role: prepare-docker
+    - role: prepare-docker-proxy
+    - role: prepare-couchdb

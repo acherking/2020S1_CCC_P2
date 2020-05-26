@@ -1,0 +1,9 @@
+---
+volumes:
+  - device: /dev/vdb
+    mountpoint: /data
+  - device: /dev/vdc
+    mountpoint: /var/lib/docker
+
+couchdb_dir: couchdb
+couchdb_data_dir: /data/couchdb

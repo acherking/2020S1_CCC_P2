@@ -1,0 +1,7 @@
+[system]
+172.xx.xx.xx ansible_python_interpreter=/usr/bin/python3
+172.xx.xx.xx ansible_python_interpreter=/usr/bin/python3
+172.xx.xx.xx ansible_python_interpreter=/usr/bin/python3
+
+[new]
+172.xx.xx.xx ansible_python_interpreter=/usr/bin/python3
