@@ -1,0 +1,15 @@
+{
+  "_id": "_design/aus_historic",
+  "_rev": "2-58d273f45722000f3dd42d9e8983753f",
+  "views": {
+    "sentiment": {
+      "reduce": "_count",
+      "map": "function(doc) {\n    if (doc.city && doc.created_at && doc.sentiment) {\n        const year = doc.created_at.split(\" \")[5];\n        const month = doc.created_at.split(\" \")[1];\n        const state = doc.state;\n        const city = doc.city;\n        emit([state, doc.sentiment, year, month], 1);\n    }\n}"
+    },
+    "hashtags": {
+      "reduce": "_count",
+      "map": "function (doc) {\n  if(doc.hashtags.length !== 0){\n    for (i=0;i<doc.hashtags.length;i++){\n      emit([doc.hashtags[i],doc.state,doc.created_at.split(\" \")[5],doc.created_at.split(\" \")[1]], 1);\n    }\n  }\n}"
+    }
+  },
+  "language": "javascript"
+}

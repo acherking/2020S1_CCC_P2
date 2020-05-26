@@ -1,0 +1,15 @@
+{
+  "_id": "_design/melbourne_historic",
+  "_rev": "6-6cd4cc4201f75751e138e737c7f50c2c",
+  "views": {
+    "hashtags": {
+      "reduce": "_count",
+      "map": "function (doc) {\n  if(doc.hashtags.length !== 0){\n    for (i=0;i<doc.hashtags.length;i++){\n      emit([doc.place.suburb,doc.hashtags[i],doc.created_at.split(\" \")[5],doc.created_at.split(\" \")[1]], 1);\n    }\n  }\n}"
+    },
+    "suburbsentiment": {
+      "reduce": "_count",
+      "map": "function(doc){if(doc.place && doc.created_at && doc.sentiment){const year = doc.created_at.split(\" \")[5];const month = doc.created_at.split(\" \")[1]; const suburb = doc.place.suburb; const city = doc.place.city;emit([doc.sentiment,suburb,year,month],1);}}"
+    }
+  },
+  "language": "javascript"
+}

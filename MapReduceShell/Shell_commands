@@ -1,0 +1,15 @@
+Australia Historic:
+curl -XPUT admin:123456@172.26.132.113:5984/aus_historic_new/_design/aus_historic \
+--data-binary @~/MapReduceShell/Australia_historic
+
+Australia Stream:
+curl -XPUT admin:123456@172.26.132.113:5984/australia_data/_design/5_19australia \
+--data-binary @~/MapReduceShell/Australia_Stream
+
+Melbourne Historic:
+curl -XPUT admin:123456@172.26.132.113:5984/melb_historic/_design/melbourne_historic \
+--data-binary @~/MapReduceShell/Melb_Historic
+
+Melbourne Stream:
+curl -XPUT admin:123456@172.26.132.113:5984/melbourne_data/_design/melbournedoc \
+--data-binary @~/MapReduceShell/Melb_Stream
