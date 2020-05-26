@@ -1,0 +1,8 @@
+  version: '3'
+    
+  services:
+    python_app:
+      build: .
+      command: python3 -u melbourne_data.py >> data/mel_data1.log 2>>&1
+      volumes:
+        - /home/ubuntu/tweet_harvester/data:/tweet_harvester/data
