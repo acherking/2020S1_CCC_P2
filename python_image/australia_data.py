@@ -15,10 +15,6 @@ else:
     db = server.create('australia_data')
 MDHM = time.strftime('%m%d%H%M', time.localtime(time.time()))
 FILEDIR = 'data/aus_' + MDHM + '.json'
-#db = server.create('australia_5_22_1')
-
-#server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
-#db = server.create('test-australia_5_18')
 
 consumer_key = 'STg9AiiHgEodfdb42z8dUZZ8P'
 consumer_secret = 'w2yd3WdmUp0KkBDUTnN45lYhXeTdT90Zf7K5ecv0L5wGgpEVrq'
