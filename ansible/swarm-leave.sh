@@ -1,5 +1,5 @@
 #!/bin/bash
 
-IP4=xxx
+IP4=172.26.130.93
 
-ssh -i xxx.pem ubuntu@${IP4} sudo docker swarm leave
+ssh -i ../key_pair/wzx2.pem ubuntu@${IP4} sudo docker swarm leave
