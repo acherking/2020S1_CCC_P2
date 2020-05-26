@@ -20,10 +20,6 @@ else:
     db = server.create('melbourne_data')
 MDHM = time.strftime('%m%d%H%M', time.localtime(time.time()))
 FILEDIR = 'data/mel_' + MDHM + '.json'
-# db = server.create('melbourne_5_22_1')
-
-#server = couchdb.Server('http://admin:admin@127.0.0.1:5984/')
-#db = server.create('test-melbourne_5_20')
 
 consumer_key = 'Twd11SLSUOhAvpmXq94bTUTtA'
 consumer_secret = 'lVfoW9DHTnWPMp8h0CxJbMn0AzNf9J84gl5o5iQMfis6hGJG1r'
