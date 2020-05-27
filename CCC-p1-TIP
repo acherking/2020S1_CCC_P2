@@ -76,10 +76,14 @@ curl -X POST -H "Content-Type: application/json" http://admin:123456@172.26.132.
 ***
 curl -X POST -H "Content-Type: application/json" http://admin:123456@172.26.133.62:5984/_cluster_setup -d '{"action": "enable_cluster", "bind_address":"0.0.0.0", "username": "admin", "password":"123456", "port": 5984, "node_count": "3", "remote_node": "172.26.131.241", "remote_current_user": "admin", "remote_current_password": "123456" }'
 
-curl -X POST -H "Content-Type: application/json" http://admin:123456@172.26.132.113:5984/_cluster_setup -d '{"action": "add_node", "host":"172.26.131.241", "port": 5984, "username": "admin", "password":"123456"}'
+curl -X POST -H "Content-Type: application/json" http://admin:123456@172.26.132.113:5984/_cluster_setup -d '{"action": "add_node", "host":"172.26.130.93", "port": 5984, "username": "admin", "password":"123456"}'
+
+curl -X POST -H "Content-Type: application/json" "http://admin:123456@${IP1}:5984/_cluster_setup" -d '{"action": "add_node", "host":"${IP4}", "port": 5984, "username": "admin", "password":"123456"}'
+
 
 ***
 curl -X POST -H "Content-Type: application/json" http://admin:123456@172.26.132.113:5984/_cluster_setup -d '{"action": "add_node", "host":"172.26.133.62", "port": 5984, "username": "admin", "password":"123456"}'
+
 
 curl -XGET "http://admin:123456@172.26.132.113:5984/"
 
@@ -137,7 +141,7 @@ sudo docker service create -d \
   acherking/cccp2web:2.0 \
   python manage.py runserver 0.0.0.0:8000
 
-sudo docker service update --image acherking/cccp2web:2.0 web-service
+sudo docker service update --image acherking/cccp2web:2.2 web-service
 
 sudo docker run -p 8000:8000 -d -v /home/ubuntu/web_image:/code --name web-server acherking/cccp2web:web_image python manage.py runserver 0.0.0.0:8000
 
@@ -165,6 +169,14 @@ sudo docker service create -d \
   python3 -u australia_data.py
 
 
+--scale down
+export IP1=172.26.132.113
+export IP4=172.26.130.93
+export ref=1-967a00dff5e02add41819138abb3284d
+
+curl "http://admin:123456@${IP1}:5984/_node/_local/_nodes/couchdb@${IP4}"
+
+curl -X DELETE "http://admin:123456@${IP1}:5984/_node/_local/_nodes/couchdb@${IP4}?rev=${ref}"
 
 
 
